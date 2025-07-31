@@ -1,0 +1,2126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AttendanceHub Pro - Complete Employee Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .glass-dark {
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .rich-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .rich-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 9999;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show { transform: translateX(0); }
+        .toast.success { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .toast.error { background: linear-gradient(135deg, #fc466b, #3f5efb); }
+        .toast.warning { background: linear-gradient(135deg, #fdbb2d, #22c1c3); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Header -->
+    <header class="glass-dark text-white shadow-lg">
+        <div class="container mx-auto px-6 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                        <i class="fas fa-users-cog text-2xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-bold">AttendanceHub Pro</h1>
+                        <p class="text-blue-200 font-medium">Complete Employee Management System</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-6">
+                    <div class="text-right">
+                        <p class="text-sm opacity-90" id="currentDate"></p>
+                        <p class="text-xs opacity-75">Real-time Tracking</p>
+                    </div>
+                    <button onclick="showAddEmployeeModal()" class="btn-primary px-6 py-3 rounded-xl flex items-center space-x-2">
+                        <i class="fas fa-user-plus"></i>
+                        <span class="font-semibold">Add Employee</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="rich-card p-6 animate-fade-in">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium mb-1">Total Employees</p>
+                        <p class="text-3xl font-bold text-gray-800" id="totalEmployees">0</p>
+                        <p class="text-xs text-green-600 font-medium mt-1">
+                            <i class="fas fa-arrow-up mr-1"></i>Active
+                        </p>
+                    </div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                        <i class="fas fa-users text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rich-card p-6 animate-fade-in" style="animation-delay: 0.1s">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium mb-1">Present Today</p>
+                        <p class="text-3xl font-bold text-green-600" id="presentCount">0</p>
+                        <p class="text-xs text-gray-500 font-medium mt-1">
+                            <i class="fas fa-check-circle mr-1"></i>On Time
+                        </p>
+                    </div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center">
+                        <i class="fas fa-check-circle text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rich-card p-6 animate-fade-in" style="animation-delay: 0.2s">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium mb-1">Absent Today</p>
+                        <p class="text-3xl font-bold text-red-600" id="absentCount">0</p>
+                        <p class="text-xs text-gray-500 font-medium mt-1">
+                            <i class="fas fa-times-circle mr-1"></i>Missing
+                        </p>
+                    </div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 flex items-center justify-center">
+                        <i class="fas fa-times-circle text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rich-card p-6 animate-fade-in" style="animation-delay: 0.3s">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium mb-1">Late Arrivals</p>
+                        <p class="text-3xl font-bold text-yellow-600" id="lateCount">0</p>
+                        <p class="text-xs text-gray-500 font-medium mt-1">
+                            <i class="fas fa-clock mr-1"></i>Delayed
+                        </p>
+                    </div>
+                    <div class="w-16 h-16 rounded-2xl bg-gradient-to-r from-yellow-500 to-yellow-600 flex items-center justify-center">
+                        <i class="fas fa-clock text-white text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="rich-card mb-6">
+            <div class="flex border-b border-gray-200">
+                <button onclick="showTab('daily')" id="dailyTab" class="flex-1 px-6 py-4 text-center font-semibold text-blue-600 border-b-2 border-blue-600 bg-blue-50 transition-all duration-200">
+                    <i class="fas fa-calendar-day mr-2"></i>Daily Attendance
+                </button>
+                <button onclick="showTab('monthly')" id="monthlyTab" class="flex-1 px-6 py-4 text-center font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200">
+                    <i class="fas fa-calendar-alt mr-2"></i>Monthly View
+                </button>
+                <button onclick="showTab('reports')" id="reportsTab" class="flex-1 px-6 py-4 text-center font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200">
+                    <i class="fas fa-chart-bar mr-2"></i>Reports
+                </button>
+                <button onclick="showTab('history')" id="historyTab" class="flex-1 px-6 py-4 text-center font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-all duration-200">
+                    <i class="fas fa-history mr-2"></i>History
+                </button>
+            </div>
+        </div>
+
+        <!-- Daily Attendance Tab -->
+        <div id="dailyContent" class="tab-content">
+            <div class="rich-card overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">Today's Attendance</h2>
+                            <p class="text-sm text-gray-600 mt-1">Real-time employee attendance tracking</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <input type="text" id="searchInput" placeholder="Search employees..." 
+                                class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <button onclick="markAllPresent()" class="btn-primary px-4 py-2 rounded-xl flex items-center space-x-2">
+                                <i class="fas fa-check-double"></i>
+                                <span>Mark All Present</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Employee</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Department</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Status</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Time Details</th>
+                                <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="employeeTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Employee rows will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly View Tab -->
+        <div id="monthlyContent" class="tab-content hidden">
+            <div class="rich-card overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">Monthly Calendar</h2>
+                            <p class="text-sm text-gray-600 mt-1">Visual attendance overview</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <button onclick="previousMonth()" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <span id="currentMonth" class="text-lg font-bold text-gray-800 min-w-[200px] text-center"></span>
+                            <button onclick="nextMonth()" class="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="monthlyCalendar">
+                        <!-- Monthly calendar will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reportsContent" class="tab-content hidden">
+            <div class="rich-card overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">Monthly Reports</h2>
+                            <p class="text-sm text-gray-600 mt-1">Comprehensive attendance analytics</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <select id="reportMonth" onchange="generateReport()" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <!-- Month options will be populated -->
+                            </select>
+                            <button onclick="exportReport('excel')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                                <i class="fas fa-file-excel mr-2"></i>Export Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="monthlyReport">
+                        <!-- Monthly report will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="historyContent" class="tab-content hidden">
+            <div class="rich-card overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-indigo-50 to-cyan-50">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-800">Historical Data</h2>
+                            <p class="text-sm text-gray-600 mt-1">Complete attendance history</p>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <select id="historyEmployee" onchange="loadEmployeeHistory()" class="px-3 py-2 border border-gray-300 rounded-lg">
+                                <option value="">All Employees</option>
+                            </select>
+                            <input type="date" id="historyFromDate" onchange="filterHistoryData()" class="px-3 py-2 border border-gray-300 rounded-lg">
+                            <input type="date" id="historyToDate" onchange="filterHistoryData()" class="px-3 py-2 border border-gray-300 rounded-lg">
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="historyData">
+                        <!-- Historical data will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Employee Modal -->
+    <div id="addEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="rich-card max-w-md w-full">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-user-plus text-green-600 mr-2"></i>Add New Employee
+                    </h3>
+                    <button onclick="hideAddEmployeeModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form onsubmit="addEmployee(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                            <input type="text" id="employeeName" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Employee ID</label>
+                            <input type="text" id="employeeId" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Department</label>
+                            <select id="employeeDepartment" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select Department</option>
+                                <option value="Human Resources">Human Resources</option>
+                                <option value="Engineering">Engineering</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Operations">Operations</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Position</label>
+                            <select id="employeePosition" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select Position</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Assistant Manager">Assistant Manager</option>
+                                <option value="Team Lead">Team Lead</option>
+                                <option value="Senior Executive">Senior Executive</option>
+                                <option value="Executive">Executive</option>
+                                <option value="Junior Executive">Junior Executive</option>
+                                <option value="Analyst">Analyst</option>
+                                <option value="Senior Analyst">Senior Analyst</option>
+                                <option value="Developer">Developer</option>
+                                <option value="Senior Developer">Senior Developer</option>
+                                <option value="Designer">Designer</option>
+                                <option value="Coordinator">Coordinator</option>
+                                <option value="Specialist">Specialist</option>
+                                <option value="Consultant">Consultant</option>
+                                <option value="Intern">Intern</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Date of Joining</label>
+                            <input type="date" id="employeeDateOfJoining" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 mt-8">
+                        <button type="button" onclick="hideAddEmployeeModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-xl font-semibold">
+                            <i class="fas fa-plus mr-2"></i>Add Employee
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="rich-card max-w-md w-full">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-sign-in-alt text-blue-600 mr-2"></i>Employee Login
+                    </h3>
+                    <button onclick="hideLoginModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="mb-6 p-4 bg-blue-50 rounded-xl">
+                    <p class="text-gray-700 mb-1">Employee: <span id="loginEmployeeName" class="font-bold text-blue-600"></span></p>
+                    <p class="text-gray-700">Date: <span id="loginDate" class="font-semibold"></span></p>
+                </div>
+                <form onsubmit="recordLogin(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Login Time</label>
+                            <div class="flex space-x-2">
+                                <select id="loginHour" required class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Hour</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                                <select id="loginMinute" required class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">Min</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <select id="loginAMPM" required class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                    <option value="">AM/PM</option>
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                            <select id="loginStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="present">On Time</option>
+                                <option value="late">Late Arrival</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Notes (Optional)</label>
+                            <textarea id="loginNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Add any notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 mt-8">
+                        <button type="button" onclick="hideLoginModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 btn-primary px-4 py-3 rounded-xl font-semibold">
+                            <i class="fas fa-sign-in-alt mr-2"></i>Record Login
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div id="logoutModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="rich-card max-w-md w-full">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-sign-out-alt text-purple-600 mr-2"></i>Employee Logout
+                    </h3>
+                    <button onclick="hideLogoutModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="mb-6 p-4 bg-purple-50 rounded-xl">
+                    <p class="text-gray-700 mb-1">Employee: <span id="logoutEmployeeName" class="font-bold text-purple-600"></span></p>
+                    <p class="text-gray-700 mb-1">Date: <span id="logoutDate" class="font-semibold"></span></p>
+                    <p class="text-gray-700">Login Time: <span id="logoutLoginTime" class="font-semibold text-green-600"></span></p>
+                </div>
+                <form onsubmit="recordLogout(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Logout Time</label>
+                            <div class="flex space-x-2">
+                                <select id="logoutHour" required class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <option value="">Hour</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                                <select id="logoutMinute" required class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <option value="">Min</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <select id="logoutAMPM" required class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <option value="">AM/PM</option>
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Total Hours</label>
+                            <input type="text" id="totalHours" readonly class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600 font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Notes (Optional)</label>
+                            <textarea id="logoutNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Add any notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 mt-8">
+                        <button type="button" onclick="hideLogoutModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-xl font-semibold">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Record Logout
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Employee Modal -->
+    <div id="editEmployeeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="rich-card max-w-md w-full">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-user-edit text-blue-600 mr-2"></i>Edit Employee Details
+                    </h3>
+                    <button onclick="hideEditEmployeeModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form onsubmit="updateEmployee(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                            <input type="text" id="editEmployeeName" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Employee ID</label>
+                            <input type="text" id="editEmployeeId" readonly class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-100 text-gray-600">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Department</label>
+                            <select id="editEmployeeDepartment" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select Department</option>
+                                <option value="Human Resources">Human Resources</option>
+                                <option value="Engineering">Engineering</option>
+                                <option value="Marketing">Marketing</option>
+                                <option value="Sales">Sales</option>
+                                <option value="Finance">Finance</option>
+                                <option value="Operations">Operations</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Position</label>
+                            <select id="editEmployeePosition" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">Select Position</option>
+                                <option value="Manager">Manager</option>
+                                <option value="Assistant Manager">Assistant Manager</option>
+                                <option value="Team Lead">Team Lead</option>
+                                <option value="Senior Executive">Senior Executive</option>
+                                <option value="Executive">Executive</option>
+                                <option value="Junior Executive">Junior Executive</option>
+                                <option value="Analyst">Analyst</option>
+                                <option value="Senior Analyst">Senior Analyst</option>
+                                <option value="Developer">Developer</option>
+                                <option value="Senior Developer">Senior Developer</option>
+                                <option value="Designer">Designer</option>
+                                <option value="Coordinator">Coordinator</option>
+                                <option value="Specialist">Specialist</option>
+                                <option value="Consultant">Consultant</option>
+                                <option value="Intern">Intern</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Date of Joining</label>
+                            <input type="date" id="editEmployeeDateOfJoining" required class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 mt-8">
+                        <button type="button" onclick="hideEditEmployeeModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold">
+                            <i class="fas fa-save mr-2"></i>Update Employee
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+        <div class="rich-card max-w-md w-full">
+            <div class="p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-edit text-yellow-600 mr-2"></i>Edit Attendance
+                    </h3>
+                    <button onclick="hideEditModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="mb-6 p-4 bg-yellow-50 rounded-xl">
+                    <p class="text-gray-700 mb-1">Employee: <span id="editEmployeeName" class="font-bold text-yellow-600"></span></p>
+                    <p class="text-gray-700">Date: <span id="editDate" class="font-semibold"></span></p>
+                </div>
+                <form onsubmit="updateAttendance(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Login Time</label>
+                            <div class="flex space-x-2">
+                                <select id="editLoginHour" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                    <option value="">Hour</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                                <select id="editLoginMinute" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                    <option value="">Min</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <select id="editLoginAMPM" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                    <option value="">AM/PM</option>
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Logout Time</label>
+                            <div class="flex space-x-2">
+                                <select id="editLogoutHour" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                    <option value="">Hour</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                    <option value="6">6</option>
+                                    <option value="7">7</option>
+                                    <option value="8">8</option>
+                                    <option value="9">9</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                                <select id="editLogoutMinute" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                    <option value="">Min</option>
+                                    <option value="00">00</option>
+                                    <option value="15">15</option>
+                                    <option value="30">30</option>
+                                    <option value="45">45</option>
+                                </select>
+                                <select id="editLogoutAMPM" class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                    <option value="">AM/PM</option>
+                                    <option value="AM">AM</option>
+                                    <option value="PM">PM</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                            <select id="editStatus" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent">
+                                <option value="present">Present</option>
+                                <option value="late">Late</option>
+                                <option value="absent">Absent</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Notes</label>
+                            <textarea id="editNotes" rows="3" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="Add any notes..."></textarea>
+                        </div>
+                    </div>
+                    <div class="flex space-x-4 mt-8">
+                        <button type="button" onclick="hideEditModal()" class="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 font-semibold">
+                            Cancel
+                        </button>
+                        <button type="submit" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-3 rounded-xl font-semibold">
+                            <i class="fas fa-save mr-2"></i>Update
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let employees = JSON.parse(localStorage.getItem('employees')) || [];
+        let attendance = JSON.parse(localStorage.getItem('attendance')) || {};
+        let currentViewDate = new Date();
+        let activeTab = 'daily';
+        let currentEditingEmployee = null;
+
+        // Helper function to format time with AM/PM
+        function formatTimeWithAMPM(timeString) {
+            if (!timeString) return '';
+            
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+            
+            return `${displayHour}:${minutes} ${ampm}`;
+        }
+
+        // Initialize the application
+        function init() {
+            updateCurrentDate();
+            renderEmployeeTable();
+            updateStats();
+            setupSearch();
+            populateReportMonths();
+            updateMonthDisplay();
+            populateEmployeeDropdown();
+            
+            // Set default date filters
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            
+            document.getElementById('historyFromDate').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('historyToDate').value = lastDay.toISOString().split('T')[0];
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+                <div class="flex items-center">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'} mr-2"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Update current date display
+        function updateCurrentDate() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        // Tab management
+        function showTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+                tab.classList.remove('text-blue-600', 'border-blue-600', 'bg-blue-50');
+                tab.classList.add('text-gray-500');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + 'Content').classList.remove('hidden');
+            
+            // Add active class to selected tab
+            const activeTabElement = document.getElementById(tabName + 'Tab');
+            if (activeTabElement) {
+                activeTabElement.classList.remove('text-gray-500');
+                activeTabElement.classList.add('text-blue-600', 'border-blue-600', 'bg-blue-50');
+            }
+            
+            activeTab = tabName;
+            
+            // Load content based on tab
+            if (tabName === 'monthly') {
+                renderMonthlyCalendar();
+            } else if (tabName === 'reports') {
+                generateReport();
+            } else if (tabName === 'history') {
+                loadHistoryData();
+            }
+        }
+
+        // Employee management functions
+        function showAddEmployeeModal() {
+            document.getElementById('addEmployeeModal').classList.remove('hidden');
+            document.getElementById('addEmployeeModal').classList.add('flex');
+        }
+
+        function hideAddEmployeeModal() {
+            document.getElementById('addEmployeeModal').classList.add('hidden');
+            document.getElementById('addEmployeeModal').classList.remove('flex');
+            // Clear form
+            document.getElementById('employeeName').value = '';
+            document.getElementById('employeeId').value = '';
+            document.getElementById('employeeDepartment').value = '';
+            document.getElementById('employeePosition').value = '';
+            document.getElementById('employeeDateOfJoining').value = '';
+        }
+
+        function addEmployee(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('employeeName').value.trim();
+            const id = document.getElementById('employeeId').value.trim();
+            const department = document.getElementById('employeeDepartment').value;
+            const position = document.getElementById('employeePosition').value.trim();
+            const dateOfJoining = document.getElementById('employeeDateOfJoining').value;
+
+            if (!name || !id || !department || !position || !dateOfJoining) {
+                showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            if (employees.find(emp => emp.id === id)) {
+                showToast('Employee ID already exists. Please use a different ID.', 'error');
+                return;
+            }
+
+            const newEmployee = {
+                id: id,
+                name: name,
+                department: department,
+                position: position,
+                dateOfJoining: dateOfJoining,
+                dateAdded: new Date().toISOString()
+            };
+
+            employees.push(newEmployee);
+            localStorage.setItem('employees', JSON.stringify(employees));
+            
+            hideAddEmployeeModal();
+            renderEmployeeTable();
+            updateStats();
+            populateEmployeeDropdown();
+            showToast(`Employee ${name} added successfully!`, 'success');
+        }
+
+        // Attendance functions
+        function getTodayKey() {
+            return new Date().toISOString().split('T')[0];
+        }
+
+        function showLoginModal(employeeId) {
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            currentEditingEmployee = employeeId;
+            document.getElementById('loginEmployeeName').textContent = employee.name;
+            document.getElementById('loginDate').textContent = new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Set current time as default
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            
+            document.getElementById('loginHour').value = hours.toString();
+            document.getElementById('loginMinute').value = minutes < 15 ? '00' : minutes < 30 ? '15' : minutes < 45 ? '30' : '45';
+            document.getElementById('loginAMPM').value = ampm;
+            document.getElementById('loginStatus').value = 'present';
+            document.getElementById('loginNotes').value = '';
+            
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('loginModal').classList.add('flex');
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('loginModal').classList.remove('flex');
+            currentEditingEmployee = null;
+        }
+
+        function recordLogin(event) {
+            event.preventDefault();
+            
+            const hour = document.getElementById('loginHour').value;
+            const minute = document.getElementById('loginMinute').value;
+            const ampm = document.getElementById('loginAMPM').value;
+            const status = document.getElementById('loginStatus').value;
+            const notes = document.getElementById('loginNotes').value;
+            
+            if (!hour || !minute || !ampm) {
+                showToast('Please select complete login time', 'error');
+                return;
+            }
+            
+            // Convert to 24-hour format for storage
+            let hour24 = parseInt(hour);
+            if (ampm === 'AM' && hour24 === 12) {
+                hour24 = 0;
+            } else if (ampm === 'PM' && hour24 !== 12) {
+                hour24 += 12;
+            }
+            const loginTime = `${hour24.toString().padStart(2, '0')}:${minute}`;
+            
+            const today = getTodayKey();
+            if (!attendance[today]) {
+                attendance[today] = {};
+            }
+            
+            attendance[today][currentEditingEmployee] = {
+                status: status,
+                loginTime: loginTime,
+                logoutTime: null,
+                totalHours: null,
+                notes: notes,
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            hideLoginModal();
+            renderEmployeeTable();
+            updateStats();
+            
+            const employee = employees.find(emp => emp.id === currentEditingEmployee);
+            showToast(`Login recorded for ${employee.name} at ${formatTimeWithAMPM(loginTime)}`, 'success');
+        }
+
+        function showLogoutModal(employeeId) {
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            const today = getTodayKey();
+            const todayAttendance = attendance[today] && attendance[today][employeeId];
+            
+            if (!todayAttendance || !todayAttendance.loginTime) {
+                showToast('Employee must login first before logout!', 'error');
+                return;
+            }
+            
+            currentEditingEmployee = employeeId;
+            document.getElementById('logoutEmployeeName').textContent = employee.name;
+            document.getElementById('logoutDate').textContent = new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            document.getElementById('logoutLoginTime').textContent = formatTimeWithAMPM(todayAttendance.loginTime);
+            
+            // Set current time as default
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            
+            document.getElementById('logoutHour').value = hours.toString();
+            document.getElementById('logoutMinute').value = minutes < 15 ? '00' : minutes < 30 ? '15' : minutes < 45 ? '30' : '45';
+            document.getElementById('logoutAMPM').value = ampm;
+            document.getElementById('logoutNotes').value = '';
+            
+            // Calculate total hours when logout time changes
+            document.getElementById('logoutHour').addEventListener('change', calculateTotalHours);
+            document.getElementById('logoutMinute').addEventListener('change', calculateTotalHours);
+            document.getElementById('logoutAMPM').addEventListener('change', calculateTotalHours);
+            calculateTotalHours();
+            
+            document.getElementById('logoutModal').classList.remove('hidden');
+            document.getElementById('logoutModal').classList.add('flex');
+        }
+
+        function hideLogoutModal() {
+            document.getElementById('logoutModal').classList.add('hidden');
+            document.getElementById('logoutModal').classList.remove('flex');
+            document.getElementById('logoutHour').removeEventListener('change', calculateTotalHours);
+            document.getElementById('logoutMinute').removeEventListener('change', calculateTotalHours);
+            document.getElementById('logoutAMPM').removeEventListener('change', calculateTotalHours);
+            currentEditingEmployee = null;
+        }
+
+        function calculateTotalHours() {
+            const today = getTodayKey();
+            const todayAttendance = attendance[today] && attendance[today][currentEditingEmployee];
+            
+            if (!todayAttendance || !todayAttendance.loginTime) return;
+            
+            const loginTime = todayAttendance.loginTime;
+            
+            const hour = document.getElementById('logoutHour').value;
+            const minute = document.getElementById('logoutMinute').value;
+            const ampm = document.getElementById('logoutAMPM').value;
+            
+            if (loginTime && hour && minute && ampm) {
+                // Convert logout time to 24-hour format
+                let hour24 = parseInt(hour);
+                if (ampm === 'AM' && hour24 === 12) {
+                    hour24 = 0;
+                } else if (ampm === 'PM' && hour24 !== 12) {
+                    hour24 += 12;
+                }
+                const logoutTime = `${hour24.toString().padStart(2, '0')}:${minute}`;
+                
+                const login = new Date(`2000-01-01 ${loginTime}`);
+                const logout = new Date(`2000-01-01 ${logoutTime}`);
+                
+                let diffMs = logout - login;
+                if (diffMs < 0) {
+                    diffMs += 24 * 60 * 60 * 1000;
+                }
+                
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                
+                document.getElementById('totalHours').value = `${hours}h ${minutes}m`;
+            }
+        }
+
+        function recordLogout(event) {
+            event.preventDefault();
+            
+            const hour = document.getElementById('logoutHour').value;
+            const minute = document.getElementById('logoutMinute').value;
+            const ampm = document.getElementById('logoutAMPM').value;
+            const notes = document.getElementById('logoutNotes').value;
+            const totalHours = document.getElementById('totalHours').value;
+            
+            if (!hour || !minute || !ampm) {
+                showToast('Please select complete logout time', 'error');
+                return;
+            }
+            
+            // Convert to 24-hour format for storage
+            let hour24 = parseInt(hour);
+            if (ampm === 'AM' && hour24 === 12) {
+                hour24 = 0;
+            } else if (ampm === 'PM' && hour24 !== 12) {
+                hour24 += 12;
+            }
+            const logoutTime = `${hour24.toString().padStart(2, '0')}:${minute}`;
+            
+            const today = getTodayKey();
+            if (attendance[today] && attendance[today][currentEditingEmployee]) {
+                attendance[today][currentEditingEmployee].logoutTime = logoutTime;
+                attendance[today][currentEditingEmployee].totalHours = totalHours;
+                if (notes) {
+                    attendance[today][currentEditingEmployee].notes = 
+                        (attendance[today][currentEditingEmployee].notes || '') + 
+                        (attendance[today][currentEditingEmployee].notes ? ' | Logout: ' : '') + notes;
+                }
+                attendance[today][currentEditingEmployee].lastUpdated = new Date().toISOString();
+            }
+            
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            hideLogoutModal();
+            renderEmployeeTable();
+            updateStats();
+            
+            const employee = employees.find(emp => emp.id === currentEditingEmployee);
+            showToast(`Logout recorded for ${employee.name} at ${formatTimeWithAMPM(logoutTime)}`, 'success');
+        }
+
+        function showEditModal(employeeId) {
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            const today = getTodayKey();
+            const todayAttendance = attendance[today] && attendance[today][employeeId];
+            
+            currentEditingEmployee = employeeId;
+            document.getElementById('editEmployeeName').textContent = employee.name;
+            document.getElementById('editDate').textContent = new Date().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Pre-fill existing data
+            if (todayAttendance) {
+                // Parse login time
+                if (todayAttendance.loginTime) {
+                    const [loginHour24, loginMin] = todayAttendance.loginTime.split(':');
+                    let loginHour12 = parseInt(loginHour24);
+                    const loginAMPM = loginHour12 >= 12 ? 'PM' : 'AM';
+                    loginHour12 = loginHour12 % 12;
+                    loginHour12 = loginHour12 ? loginHour12 : 12;
+                    
+                    document.getElementById('editLoginHour').value = loginHour12.toString();
+                    document.getElementById('editLoginMinute').value = loginMin;
+                    document.getElementById('editLoginAMPM').value = loginAMPM;
+                } else {
+                    document.getElementById('editLoginHour').value = '';
+                    document.getElementById('editLoginMinute').value = '';
+                    document.getElementById('editLoginAMPM').value = '';
+                }
+                
+                // Parse logout time
+                if (todayAttendance.logoutTime) {
+                    const [logoutHour24, logoutMin] = todayAttendance.logoutTime.split(':');
+                    let logoutHour12 = parseInt(logoutHour24);
+                    const logoutAMPM = logoutHour12 >= 12 ? 'PM' : 'AM';
+                    logoutHour12 = logoutHour12 % 12;
+                    logoutHour12 = logoutHour12 ? logoutHour12 : 12;
+                    
+                    document.getElementById('editLogoutHour').value = logoutHour12.toString();
+                    document.getElementById('editLogoutMinute').value = logoutMin;
+                    document.getElementById('editLogoutAMPM').value = logoutAMPM;
+                } else {
+                    document.getElementById('editLogoutHour').value = '';
+                    document.getElementById('editLogoutMinute').value = '';
+                    document.getElementById('editLogoutAMPM').value = '';
+                }
+                
+                document.getElementById('editStatus').value = todayAttendance.status || 'present';
+                document.getElementById('editNotes').value = todayAttendance.notes || '';
+            } else {
+                document.getElementById('editLoginHour').value = '';
+                document.getElementById('editLoginMinute').value = '';
+                document.getElementById('editLoginAMPM').value = '';
+                document.getElementById('editLogoutHour').value = '';
+                document.getElementById('editLogoutMinute').value = '';
+                document.getElementById('editLogoutAMPM').value = '';
+                document.getElementById('editStatus').value = 'present';
+                document.getElementById('editNotes').value = '';
+            }
+            
+            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('editModal').classList.add('flex');
+        }
+
+        function hideEditModal() {
+            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('editModal').classList.remove('flex');
+            currentEditingEmployee = null;
+        }
+
+        function updateAttendance(event) {
+            event.preventDefault();
+            
+            const loginHour = document.getElementById('editLoginHour').value;
+            const loginMinute = document.getElementById('editLoginMinute').value;
+            const loginAMPM = document.getElementById('editLoginAMPM').value;
+            
+            const logoutHour = document.getElementById('editLogoutHour').value;
+            const logoutMinute = document.getElementById('editLogoutMinute').value;
+            const logoutAMPM = document.getElementById('editLogoutAMPM').value;
+            
+            const status = document.getElementById('editStatus').value;
+            const notes = document.getElementById('editNotes').value;
+            
+            const today = getTodayKey();
+            if (!attendance[today]) {
+                attendance[today] = {};
+            }
+            
+            let loginTime = null;
+            let logoutTime = null;
+            let totalHours = null;
+            
+            // Convert login time to 24-hour format
+            if (loginHour && loginMinute && loginAMPM) {
+                let loginHour24 = parseInt(loginHour);
+                if (loginAMPM === 'AM' && loginHour24 === 12) {
+                    loginHour24 = 0;
+                } else if (loginAMPM === 'PM' && loginHour24 !== 12) {
+                    loginHour24 += 12;
+                }
+                loginTime = `${loginHour24.toString().padStart(2, '0')}:${loginMinute}`;
+            }
+            
+            // Convert logout time to 24-hour format
+            if (logoutHour && logoutMinute && logoutAMPM) {
+                let logoutHour24 = parseInt(logoutHour);
+                if (logoutAMPM === 'AM' && logoutHour24 === 12) {
+                    logoutHour24 = 0;
+                } else if (logoutAMPM === 'PM' && logoutHour24 !== 12) {
+                    logoutHour24 += 12;
+                }
+                logoutTime = `${logoutHour24.toString().padStart(2, '0')}:${logoutMinute}`;
+            }
+            
+            // Calculate total hours
+            if (loginTime && logoutTime) {
+                const login = new Date(`2000-01-01 ${loginTime}`);
+                const logout = new Date(`2000-01-01 ${logoutTime}`);
+                
+                let diffMs = logout - login;
+                if (diffMs < 0) {
+                    diffMs += 24 * 60 * 60 * 1000;
+                }
+                
+                const hours = Math.floor(diffMs / (1000 * 60 * 60));
+                const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                totalHours = `${hours}h ${minutes}m`;
+            }
+            
+            attendance[today][currentEditingEmployee] = {
+                status: status,
+                loginTime: loginTime,
+                logoutTime: logoutTime,
+                totalHours: totalHours,
+                notes: notes,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            hideEditModal();
+            renderEmployeeTable();
+            updateStats();
+            
+            const employee = employees.find(emp => emp.id === currentEditingEmployee);
+            showToast(`Attendance updated for ${employee.name}`, 'success');
+        }
+
+        function markAttendance(employeeId, status) {
+            const today = getTodayKey();
+            if (!attendance[today]) {
+                attendance[today] = {};
+            }
+            
+            attendance[today][employeeId] = {
+                status: status,
+                loginTime: null,
+                logoutTime: null,
+                totalHours: null,
+                notes: 'Marked as absent',
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            renderEmployeeTable();
+            updateStats();
+            
+            const employee = employees.find(emp => emp.id === employeeId);
+            showToast(`${employee.name} marked as ${status}`, 'warning');
+        }
+
+        function markAllPresent() {
+            if (employees.length === 0) {
+                showToast('No employees to mark present', 'error');
+                return;
+            }
+            
+            const today = getTodayKey();
+            if (!attendance[today]) {
+                attendance[today] = {};
+            }
+            
+            let markedCount = 0;
+            employees.forEach(employee => {
+                if (!attendance[today][employee.id]) {
+                    attendance[today][employee.id] = {
+                        status: 'present',
+                        loginTime: new Date().toTimeString().slice(0, 5),
+                        logoutTime: null,
+                        totalHours: null,
+                        notes: 'Marked present automatically',
+                        timestamp: new Date().toISOString()
+                    };
+                    markedCount++;
+                }
+            });
+            
+            localStorage.setItem('attendance', JSON.stringify(attendance));
+            renderEmployeeTable();
+            updateStats();
+            
+            if (markedCount > 0) {
+                showToast(`${markedCount} employees marked as present`, 'success');
+            } else {
+                showToast('All employees already have attendance marked', 'warning');
+            }
+        }
+
+        function showEditEmployeeModal(employeeId) {
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            currentEditingEmployee = employeeId;
+            document.getElementById('editEmployeeName').value = employee.name;
+            document.getElementById('editEmployeeId').value = employee.id;
+            document.getElementById('editEmployeeDepartment').value = employee.department;
+            document.getElementById('editEmployeePosition').value = employee.position;
+            document.getElementById('editEmployeeDateOfJoining').value = employee.dateOfJoining;
+            
+            document.getElementById('editEmployeeModal').classList.remove('hidden');
+            document.getElementById('editEmployeeModal').classList.add('flex');
+        }
+
+        function hideEditEmployeeModal() {
+            document.getElementById('editEmployeeModal').classList.add('hidden');
+            document.getElementById('editEmployeeModal').classList.remove('flex');
+            currentEditingEmployee = null;
+        }
+
+        function updateEmployee(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('editEmployeeName').value.trim();
+            const department = document.getElementById('editEmployeeDepartment').value;
+            const position = document.getElementById('editEmployeePosition').value;
+            const dateOfJoining = document.getElementById('editEmployeeDateOfJoining').value;
+
+            if (!name || !department || !position || !dateOfJoining) {
+                showToast('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const employeeIndex = employees.findIndex(emp => emp.id === currentEditingEmployee);
+            if (employeeIndex === -1) {
+                showToast('Employee not found', 'error');
+                return;
+            }
+
+            employees[employeeIndex] = {
+                ...employees[employeeIndex],
+                name: name,
+                department: department,
+                position: position,
+                dateOfJoining: dateOfJoining,
+                lastUpdated: new Date().toISOString()
+            };
+
+            localStorage.setItem('employees', JSON.stringify(employees));
+            hideEditEmployeeModal();
+            renderEmployeeTable();
+            updateStats();
+            populateEmployeeDropdown();
+            showToast(`Employee ${name} updated successfully!`, 'success');
+        }
+
+        function removeEmployee(employeeId) {
+            const employee = employees.find(emp => emp.id === employeeId);
+            if (!employee) return;
+            
+            if (confirm(`Are you sure you want to remove ${employee.name}? This action cannot be undone.`)) {
+                employees = employees.filter(emp => emp.id !== employeeId);
+                localStorage.setItem('employees', JSON.stringify(employees));
+                renderEmployeeTable();
+                updateStats();
+                populateEmployeeDropdown();
+                showToast(`Employee ${employee.name} removed successfully`, 'success');
+            }
+        }
+
+        // Render functions
+        function getAttendanceStatus(employeeId) {
+            const today = getTodayKey();
+            return attendance[today] && attendance[today][employeeId] 
+                ? attendance[today][employeeId] 
+                : null;
+        }
+
+        function renderEmployeeTable() {
+            const tbody = document.getElementById('employeeTableBody');
+            tbody.innerHTML = '';
+
+            if (employees.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-500">
+                            <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                                <i class="fas fa-users text-white text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-semibold mb-2">No employees added yet</h3>
+                            <p class="text-sm mb-4">Start by adding your first employee to begin tracking attendance</p>
+                            <button onclick="showAddEmployeeModal()" class="btn-primary px-6 py-3 rounded-xl">
+                                <i class="fas fa-user-plus mr-2"></i>Add First Employee
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            employees.forEach(employee => {
+                const attendanceStatus = getAttendanceStatus(employee.id);
+                const statusBadge = getStatusBadge(attendanceStatus);
+                
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50 transition-all duration-200';
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-12 w-12">
+                                <div class="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg">
+                                    ${employee.name.charAt(0).toUpperCase()}
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-bold text-gray-900">${employee.name}</div>
+                                <div class="text-sm text-gray-500">ID: ${employee.id}</div>
+                                <div class="text-xs text-gray-400">Joined: ${new Date(employee.dateOfJoining).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-semibold text-gray-900">${employee.department}</div>
+                        <div class="text-sm text-gray-500">${employee.position}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        ${statusBadge}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div class="space-y-1">
+                            ${attendanceStatus && attendanceStatus.loginTime ? 
+                                `<div class="flex items-center text-green-600 font-medium"><i class="fas fa-sign-in-alt mr-2"></i>In: ${formatTimeWithAMPM(attendanceStatus.loginTime)}</div>` : ''}
+                            ${attendanceStatus && attendanceStatus.logoutTime ? 
+                                `<div class="flex items-center text-red-600 font-medium"><i class="fas fa-sign-out-alt mr-2"></i>Out: ${formatTimeWithAMPM(attendanceStatus.logoutTime)}</div>` : ''}
+                            ${attendanceStatus && attendanceStatus.totalHours ? 
+                                `<div class="flex items-center text-blue-600 font-bold"><i class="fas fa-clock mr-2"></i>${attendanceStatus.totalHours}</div>` : ''}
+                            ${!attendanceStatus || (!attendanceStatus.loginTime && !attendanceStatus.logoutTime) ? 
+                                '<div class="text-gray-400 italic">No time recorded</div>' : ''}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="showLoginModal('${employee.id}')" 
+                                class="bg-blue-100 hover:bg-blue-200 text-blue-800 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200">
+                                <i class="fas fa-sign-in-alt mr-1"></i>Login
+                            </button>
+                            <button onclick="showLogoutModal('${employee.id}')" 
+                                class="bg-purple-100 hover:bg-purple-200 text-purple-800 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200">
+                                <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                            </button>
+                            <button onclick="markAttendance('${employee.id}', 'absent')" 
+                                class="bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200">
+                                <i class="fas fa-times mr-1"></i>Absent
+                            </button>
+                            <button onclick="showEditModal('${employee.id}')" 
+                                class="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button onclick="showEditEmployeeModal('${employee.id}')" 
+                                class="bg-indigo-100 hover:bg-indigo-200 text-indigo-800 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200">
+                                <i class="fas fa-user-edit mr-1"></i>Edit Info
+                            </button>
+                            <button onclick="removeEmployee('${employee.id}')" 
+                                class="bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function getStatusBadge(attendanceStatus) {
+            if (!attendanceStatus) {
+                return '<span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-800">Not Marked</span>';
+            }
+
+            const statusConfig = {
+                present: { class: 'bg-green-100 text-green-800', icon: 'fa-check-circle', text: 'Present' },
+                absent: { class: 'bg-red-100 text-red-800', icon: 'fa-times-circle', text: 'Absent' },
+                late: { class: 'bg-yellow-100 text-yellow-800', icon: 'fa-clock', text: 'Late' }
+            };
+
+            const config = statusConfig[attendanceStatus.status];
+            return `<span class="px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${config.class}">
+                <i class="fas ${config.icon} mr-1"></i>${config.text}
+            </span>`;
+        }
+
+        function updateStats() {
+            const today = getTodayKey();
+            const todayAttendance = attendance[today] || {};
+            
+            let presentCount = 0;
+            let absentCount = 0;
+            let lateCount = 0;
+
+            employees.forEach(employee => {
+                const status = todayAttendance[employee.id];
+                if (status) {
+                    switch (status.status) {
+                        case 'present': presentCount++; break;
+                        case 'absent': absentCount++; break;
+                        case 'late': lateCount++; break;
+                    }
+                }
+            });
+
+            document.getElementById('totalEmployees').textContent = employees.length;
+            document.getElementById('presentCount').textContent = presentCount;
+            document.getElementById('absentCount').textContent = absentCount;
+            document.getElementById('lateCount').textContent = lateCount;
+        }
+
+        function setupSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const rows = document.querySelectorAll('#employeeTableBody tr');
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            }
+        }
+
+        // Monthly calendar functions
+        function updateMonthDisplay() {
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+            const monthDisplay = `${monthNames[currentViewDate.getMonth()]} ${currentViewDate.getFullYear()}`;
+            document.getElementById('currentMonth').textContent = monthDisplay;
+        }
+
+        function previousMonth() {
+            currentViewDate.setMonth(currentViewDate.getMonth() - 1);
+            updateMonthDisplay();
+            if (activeTab === 'monthly') renderMonthlyCalendar();
+        }
+
+        function nextMonth() {
+            currentViewDate.setMonth(currentViewDate.getMonth() + 1);
+            updateMonthDisplay();
+            if (activeTab === 'monthly') renderMonthlyCalendar();
+        }
+
+        function renderMonthlyCalendar() {
+            const calendar = document.getElementById('monthlyCalendar');
+            const year = currentViewDate.getFullYear();
+            const month = currentViewDate.getMonth();
+            
+            if (employees.length === 0) {
+                calendar.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-calendar-times text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">No employees to display</h3>
+                        <p class="text-sm mb-4">Add employees to see their monthly attendance calendar</p>
+                        <button onclick="showAddEmployeeModal()" class="btn-primary px-6 py-3 rounded-xl">
+                            <i class="fas fa-user-plus mr-2"></i>Add Employee
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            let calendarHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse min-w-[800px]">
+                        <thead>
+                            <tr class="bg-gradient-to-r from-blue-50 to-purple-50">
+                                <th class="border border-gray-200 px-3 py-3 text-xs font-bold text-gray-700 uppercase min-w-[150px]">Employee</th>
+            `;
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                const isToday = date.toDateString() === new Date().toDateString();
+                calendarHTML += `<th class="border border-gray-200 px-1 py-3 text-xs font-bold text-gray-700 text-center min-w-[35px] ${isToday ? 'bg-blue-100' : ''}">
+                    <div class="${isToday ? 'text-blue-600 font-bold' : ''}">${day}</div>
+                    <div class="text-xs opacity-75">${dayName}</div>
+                </th>`;
+            }
+            calendarHTML += '</tr></thead><tbody>';
+            
+            employees.forEach(employee => {
+                calendarHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="border border-gray-200 px-3 py-3 font-semibold text-sm bg-gray-50">
+                            <div class="flex items-center">
+                                <div class="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mr-2">
+                                    ${employee.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="font-bold">${employee.name}</div>
+                                    <div class="text-xs text-gray-500">${employee.department}</div>
+                                </div>
+                            </div>
+                        </td>
+                `;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayAttendance = attendance[dateKey] && attendance[dateKey][employee.id];
+                    const isToday = new Date(year, month, day).toDateString() === new Date().toDateString();
+                    
+                    let cellClass = `border border-gray-200 px-1 py-2 text-center text-xs ${isToday ? 'bg-blue-50' : ''}`;
+                    let cellContent = '';
+                    
+                    if (dayAttendance) {
+                        switch (dayAttendance.status) {
+                            case 'present':
+                                cellClass += ' bg-green-100';
+                                cellContent = '<i class="fas fa-check text-green-600 text-sm"></i>';
+                                break;
+                            case 'absent':
+                                cellClass += ' bg-red-100';
+                                cellContent = '<i class="fas fa-times text-red-600 text-sm"></i>';
+                                break;
+                            case 'late':
+                                cellClass += ' bg-yellow-100';
+                                cellContent = '<i class="fas fa-clock text-yellow-600 text-sm"></i>';
+                                break;
+                        }
+                    } else {
+                        cellContent = '<span class="text-gray-300">-</span>';
+                    }
+                    
+                    calendarHTML += `<td class="${cellClass}" title="${dayAttendance ? `${employee.name} - ${dayAttendance.status}` : 'No record'}">${cellContent}</td>`;
+                }
+                
+                calendarHTML += '</tr>';
+            });
+            
+            calendarHTML += '</tbody></table></div>';
+            
+            calendarHTML += `
+                <div class="mt-6 flex flex-wrap items-center justify-center gap-4 text-sm">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-green-100 rounded mr-2 flex items-center justify-center">
+                            <i class="fas fa-check text-green-600 text-xs"></i>
+                        </div>
+                        <span>Present</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-yellow-100 rounded mr-2 flex items-center justify-center">
+                            <i class="fas fa-clock text-yellow-600 text-xs"></i>
+                        </div>
+                        <span>Late</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-red-100 rounded mr-2 flex items-center justify-center">
+                            <i class="fas fa-times text-red-600 text-xs"></i>
+                        </div>
+                        <span>Absent</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-gray-100 rounded mr-2 flex items-center justify-center">
+                            <span class="text-gray-400 text-xs">-</span>
+                        </div>
+                        <span>No Record</span>
+                    </div>
+                </div>
+            `;
+            
+            calendar.innerHTML = calendarHTML;
+        }
+
+        // Report functions
+        function populateReportMonths() {
+            const select = document.getElementById('reportMonth');
+            if (!select) return;
+            
+            select.innerHTML = '';
+            
+            const currentDate = new Date();
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+            
+            for (let i = 0; i < 12; i++) {
+                const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                const text = `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+                
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                if (i === 0) option.selected = true;
+                select.appendChild(option);
+            }
+        }
+
+        function generateReport() {
+            const reportContainer = document.getElementById('monthlyReport');
+            const selectedMonth = document.getElementById('reportMonth').value;
+            
+            if (!selectedMonth) {
+                reportContainer.innerHTML = '<div class="text-center py-8 text-gray-500">Please select a month to generate report</div>';
+                return;
+            }
+            
+            if (employees.length === 0) {
+                reportContainer.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-chart-bar text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">No employees to report</h3>
+                        <p class="text-sm mb-4">Add employees to generate monthly reports</p>
+                        <button onclick="showAddEmployeeModal()" class="btn-primary px-6 py-3 rounded-xl">
+                            <i class="fas fa-user-plus mr-2"></i>Add Employee
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const [year, month] = selectedMonth.split('-');
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            let reportHTML = `
+                <div class="mb-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                    <h3 class="font-bold text-purple-800 mb-2">Report Summary</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <span class="text-purple-700">Month:</span>
+                            <div class="font-bold">${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</div>
+                        </div>
+                        <div>
+                            <span class="text-purple-700">Total Days:</span>
+                            <div class="font-bold">${daysInMonth}</div>
+                        </div>
+                        <div>
+                            <span class="text-purple-700">Employees:</span>
+                            <div class="font-bold">${employees.length}</div>
+                        </div>
+                        <div>
+                            <span class="text-purple-700">Generated:</span>
+                            <div class="font-bold">${new Date().toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gradient-to-r from-purple-50 to-pink-50">
+                                <th class="border border-gray-200 px-4 py-3 text-left text-sm font-bold text-gray-700">Employee</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Total Days</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Present</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Absent</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Late</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Attendance %</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            employees.forEach(employee => {
+                let presentDays = 0;
+                let absentDays = 0;
+                let lateDays = 0;
+                let totalMarkedDays = 0;
+                
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dateKey = `${year}-${month.padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayAttendance = attendance[dateKey] && attendance[dateKey][employee.id];
+                    
+                    if (dayAttendance) {
+                        totalMarkedDays++;
+                        switch (dayAttendance.status) {
+                            case 'present': presentDays++; break;
+                            case 'absent': absentDays++; break;
+                            case 'late': lateDays++; break;
+                        }
+                    }
+                }
+                
+                const attendancePercentage = totalMarkedDays > 0 ? 
+                    Math.round(((presentDays + lateDays) / totalMarkedDays) * 100) : 0;
+                
+                let percentageClass = 'text-gray-600';
+                let percentageBg = 'bg-gray-100';
+                let performance = 'No Data';
+                
+                if (totalMarkedDays > 0) {
+                    if (attendancePercentage >= 95) {
+                        percentageClass = 'text-green-700 font-bold';
+                        percentageBg = 'bg-green-100';
+                        performance = 'Excellent';
+                    } else if (attendancePercentage >= 85) {
+                        percentageClass = 'text-blue-700 font-bold';
+                        percentageBg = 'bg-blue-100';
+                        performance = 'Good';
+                    } else if (attendancePercentage >= 75) {
+                        percentageClass = 'text-yellow-700 font-bold';
+                        percentageBg = 'bg-yellow-100';
+                        performance = 'Average';
+                    } else if (attendancePercentage >= 60) {
+                        percentageClass = 'text-orange-700 font-bold';
+                        percentageBg = 'bg-orange-100';
+                        performance = 'Below Average';
+                    } else {
+                        percentageClass = 'text-red-700 font-bold';
+                        percentageBg = 'bg-red-100';
+                        performance = 'Poor';
+                    }
+                }
+                
+                reportHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="border border-gray-200 px-4 py-3">
+                            <div class="flex items-center">
+                                <div class="h-10 w-10 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-bold mr-3">
+                                    ${employee.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <div class="font-bold text-gray-900">${employee.name}</div>
+                                    <div class="text-sm text-gray-500">${employee.department}</div>
+                                    <div class="text-xs text-gray-400">ID: ${employee.id}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="border border-gray-200 px-4 py-3 text-center font-bold">${daysInMonth}</td>
+                        <td class="border border-gray-200 px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-green-100 text-green-800">
+                                ${presentDays}
+                            </span>
+                        </td>
+                        <td class="border border-gray-200 px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-800">
+                                ${absentDays}
+                            </span>
+                        </td>
+                        <td class="border border-gray-200 px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold bg-yellow-100 text-yellow-800">
+                                ${lateDays}
+                            </span>
+                        </td>
+                        <td class="border border-gray-200 px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm ${percentageClass} ${percentageBg}">
+                                ${attendancePercentage}%
+                            </span>
+                        </td>
+                        <td class="border border-gray-200 px-4 py-3 text-center">
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${percentageBg} ${percentageClass}">
+                                ${performance}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            reportHTML += '</tbody></table></div>';
+            reportContainer.innerHTML = reportHTML;
+        }
+
+        function exportReport(format = 'excel') {
+            const selectedMonth = document.getElementById('reportMonth').value;
+            if (!selectedMonth) {
+                showToast('Please select a month to export', 'error');
+                return;
+            }
+            
+            if (employees.length === 0) {
+                showToast('No employees to export', 'error');
+                return;
+            }
+            
+            const [year, month] = selectedMonth.split('-');
+            const monthNames = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+            const monthName = monthNames[parseInt(month) - 1];
+            const daysInMonth = new Date(year, month, 0).getDate();
+            
+            if (format === 'excel') {
+                try {
+                    const wb = XLSX.utils.book_new();
+                    
+                    const summaryData = [
+                        ['EMPLOYEE ATTENDANCE REPORT'],
+                        [`Month: ${monthName} ${year}`],
+                        [`Generated on: ${new Date().toLocaleDateString('en-US', { 
+                            weekday: 'long', 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}`],
+                        [`Total Employees: ${employees.length}`],
+                        [`Total Working Days: ${daysInMonth}`],
+                        [''],
+                        ['Employee Name', 'Employee ID', 'Department', 'Position', 'Date of Joining', 'Total Working Days', 'Present Days', 'Absent Days', 'Late Days', 'Attendance Rate', 'Performance Status']
+                    ];
+                    
+                    employees.forEach(employee => {
+                        let presentDays = 0;
+                        let absentDays = 0;
+                        let lateDays = 0;
+                        let totalMarkedDays = 0;
+                        
+                        for (let day = 1; day <= daysInMonth; day++) {
+                            const dateKey = `${year}-${month.padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                            const dayAttendance = attendance[dateKey] && attendance[dateKey][employee.id];
+                            
+                            if (dayAttendance) {
+                                totalMarkedDays++;
+                                switch (dayAttendance.status) {
+                                    case 'present': presentDays++; break;
+                                    case 'absent': absentDays++; break;
+                                    case 'late': lateDays++; break;
+                                }
+                            }
+                        }
+                        
+                        const attendancePercentage = totalMarkedDays > 0 ? 
+                            Math.round(((presentDays + lateDays) / totalMarkedDays) * 100) : 0;
+                        
+                        let performanceStatus = 'No Data';
+                        if (totalMarkedDays > 0) {
+                            if (attendancePercentage >= 95) performanceStatus = 'Excellent';
+                            else if (attendancePercentage >= 85) performanceStatus = 'Good';
+                            else if (attendancePercentage >= 75) performanceStatus = 'Average';
+                            else if (attendancePercentage >= 60) performanceStatus = 'Below Average';
+                            else performanceStatus = 'Poor';
+                        }
+                        
+                        summaryData.push([
+                            employee.name,
+                            employee.id,
+                            employee.department,
+                            employee.position,
+                            new Date(employee.dateOfJoining).toLocaleDateString('en-US'),
+                            daysInMonth,
+                            presentDays,
+                            absentDays,
+                            lateDays,
+                            `${attendancePercentage}%`,
+                            performanceStatus
+                        ]);
+                    });
+                    
+                    const summaryWs = XLSX.utils.aoa_to_sheet(summaryData);
+                    summaryWs['!cols'] = [
+                        {wch: 25}, {wch: 15}, {wch: 18}, {wch: 20}, {wch: 15}, 
+                        {wch: 18}, {wch: 15}, {wch: 15}, {wch: 12}, {wch: 18}, {wch: 18}
+                    ];
+                    
+                    XLSX.utils.book_append_sheet(wb, summaryWs, "Monthly Summary");
+                    
+                    const fileName = `Attendance-Report-${monthName}-${year}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    
+                    showToast(`Excel report "${fileName}" downloaded successfully!`, 'success');
+                    
+                } catch (error) {
+                    console.error('Excel export error:', error);
+                    showToast('Error creating Excel file. Please try again.', 'error');
+                }
+            }
+        }
+
+        // History functions
+        function populateEmployeeDropdown() {
+            const select = document.getElementById('historyEmployee');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">All Employees</option>';
+            
+            employees.forEach(employee => {
+                const option = document.createElement('option');
+                option.value = employee.id;
+                option.textContent = `${employee.name} (${employee.id})`;
+                select.appendChild(option);
+            });
+        }
+
+        function loadEmployeeHistory() {
+            loadHistoryData();
+        }
+
+        function filterHistoryData() {
+            loadHistoryData();
+        }
+
+        function loadHistoryData() {
+            const historyContainer = document.getElementById('historyData');
+            const selectedEmployee = document.getElementById('historyEmployee').value;
+            const fromDate = document.getElementById('historyFromDate').value;
+            const toDate = document.getElementById('historyToDate').value;
+            
+            if (employees.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                            <i class="fas fa-history text-white text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">No historical data</h3>
+                        <p class="text-sm mb-4">Add employees and track attendance to see historical data</p>
+                        <button onclick="showAddEmployeeModal()" class="btn-primary px-6 py-3 rounded-xl">
+                            <i class="fas fa-user-plus mr-2"></i>Add Employee
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            const allDates = Object.keys(attendance).sort().reverse();
+            let filteredDates = allDates;
+            
+            if (fromDate && toDate) {
+                filteredDates = allDates.filter(date => date >= fromDate && date <= toDate);
+            }
+            
+            if (filteredDates.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <i class="fas fa-calendar-times text-4xl mb-4"></i>
+                        <h3 class="text-lg font-semibold mb-2">No data found</h3>
+                        <p class="text-sm">No attendance records found for the selected criteria</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let historyHTML = `
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-gradient-to-r from-indigo-50 to-cyan-50">
+                                <th class="border border-gray-200 px-4 py-3 text-left text-sm font-bold text-gray-700">Date</th>
+                                <th class="border border-gray-200 px-4 py-3 text-left text-sm font-bold text-gray-700">Employee</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Status</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Login Time</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Logout Time</th>
+                                <th class="border border-gray-200 px-4 py-3 text-center text-sm font-bold text-gray-700">Total Hours</th>
+                                <th class="border border-gray-200 px-4 py-3 text-left text-sm font-bold text-gray-700">Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            filteredDates.forEach(date => {
+                const dayAttendance = attendance[date];
+                const dateObj = new Date(date);
+                const formattedDate = dateObj.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
+                Object.keys(dayAttendance).forEach(employeeId => {
+                    const employee = employees.find(emp => emp.id === employeeId);
+                    if (!employee) return;
+                    
+                    if (selectedEmployee && selectedEmployee !== employeeId) return;
+                    
+                    const record = dayAttendance[employeeId];
+                    const statusBadge = getStatusBadge(record);
+                    
+                    historyHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="border border-gray-200 px-4 py-3 font-semibold">${formattedDate}</td>
+                            <td class="border border-gray-200 px-4 py-3">
+                                <div class="flex items-center">
+                                    <div class="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold mr-2">
+                                        ${employee.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-sm">${employee.name}</div>
+                                        <div class="text-xs text-gray-500">${employee.department}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="border border-gray-200 px-4 py-3 text-center">${statusBadge}</td>
+                            <td class="border border-gray-200 px-4 py-3 text-center font-mono text-sm">
+                                ${record.loginTime ? formatTimeWithAMPM(record.loginTime) : '<span class="text-gray-400">-</span>'}
+                            </td>
+                            <td class="border border-gray-200 px-4 py-3 text-center font-mono text-sm">
+                                ${record.logoutTime ? formatTimeWithAMPM(record.logoutTime) : '<span class="text-gray-400">-</span>'}
+                            </td>
+                            <td class="border border-gray-200 px-4 py-3 text-center font-semibold text-sm">
+                                ${record.totalHours || '<span class="text-gray-400">-</span>'}
+                            </td>
+                            <td class="border border-gray-200 px-4 py-3 text-sm">
+                                ${record.notes || '<span class="text-gray-400 italic">No notes</span>'}
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+            
+            historyHTML += '</tbody></table></div>';
+            historyContainer.innerHTML = historyHTML;
+        }
+
+        // Initialize the application when the page loads
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'967bc0f4829028cd',t:'MTc1Mzk1MDgzNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
